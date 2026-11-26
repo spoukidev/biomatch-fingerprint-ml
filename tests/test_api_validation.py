@@ -32,6 +32,22 @@ class SimulationValidationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('svm_kernel', response.get_json()['error'])
 
+    def test_non_string_svm_kernel_returns_400(self):
+        for kernel in (['rbf'], {'name': 'rbf'}, 5):
+            response = self.client.post('/api/run-simulation', json={'svm_kernel': kernel})
+            self.assertEqual(response.status_code, 400, kernel)
+            self.assertIn('svm_kernel', response.get_json()['error'])
+
+    def test_infinite_number_returns_400(self):
+        # Flask's JSON parser maps out-of-range literals such as 1e999 to float('inf').
+        response = self.client.post(
+            '/api/run-simulation',
+            data='{"n_samples": 1e999}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('n_samples must be an integer', response.get_json()['error'])
+
     def test_boolean_is_not_accepted_as_integer(self):
         with self.assertRaisesRegex(ValueError, 'n_samples must be an integer'):
             parse_bounded_int({'n_samples': True}, 'n_samples', 1000)

@@ -33,7 +33,7 @@ def parse_bounded_int(data, key, default):
         raise ValueError(f'{key} must be an integer')
     try:
         value = int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise ValueError(f'{key} must be an integer') from None
     low, high = LIMITS[key]
     if not low <= value <= high:
@@ -80,7 +80,7 @@ def run_simulation():
         return jsonify({'error': str(exc)}), 400
 
     svm_kernel = data.get('svm_kernel', 'rbf')
-    if svm_kernel not in ALLOWED_SVM_KERNELS:
+    if not isinstance(svm_kernel, str) or svm_kernel not in ALLOWED_SVM_KERNELS:
         return jsonify({'error': 'svm_kernel must be one of: linear, poly, rbf, sigmoid'}), 400
     
     # 1. Chargement des données
